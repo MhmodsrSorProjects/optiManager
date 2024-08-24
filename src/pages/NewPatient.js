@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-const NewUser = () => {
-  const [userData, setUserData] = useState({
+const NewPatient = () => {
+  const [patientData, setPatientData] = useState({
     patientName: '',
     doctorName: '',
     patientID: '',
@@ -10,18 +10,19 @@ const NewUser = () => {
     dateOfBirth: '',
     language: '',
     kupatCholim: '',
+    gender: '',
+    email: '' 
   });
 
   const handleChange = (e) => {
-    setUserData({ ...userData, [e.target.name]: e.target.value });
+    setPatientData({ ...patientData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // In a real application, you'd send this data to your backend server.
-    console.log('New User Data:', userData);
-    // Reset form
-    setUserData({
+    // send this data to your backend server.
+    console.log('New Patient Data:', patientData);
+    setPatientData({
       patientName: '',
       doctorName: '',
       patientID: '',
@@ -29,6 +30,8 @@ const NewUser = () => {
       dateOfBirth: '',
       language: '',
       kupatCholim: '',
+      gender: '',
+      email: '' 
     });
     // Optionally, redirect to another page after submission
   };
@@ -36,7 +39,7 @@ const NewUser = () => {
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 rounded shadow-md w-full max-w-lg">
-        <h2 className="text-2xl font-bold mb-6 text-center">Create New patient</h2>
+        <h2 className="text-2xl font-bold mb-6 text-center">Create New Patient</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="patientName">
@@ -46,7 +49,7 @@ const NewUser = () => {
               type="text"
               id="patientName"
               name="patientName"
-              value={userData.patientName}
+              value={patientData.patientName}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-md"
               required
@@ -60,7 +63,7 @@ const NewUser = () => {
               type="text"
               id="doctorName"
               name="doctorName"
-              value={userData.doctorName}
+              value={patientData.doctorName}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-md"
               required
@@ -74,7 +77,7 @@ const NewUser = () => {
               type="text"
               id="patientID"
               name="patientID"
-              value={userData.patientID}
+              value={patientData.patientID}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-md"
               required
@@ -88,7 +91,7 @@ const NewUser = () => {
               type="text"
               id="phoneNumber"
               name="phoneNumber"
-              value={userData.phoneNumber}
+              value={patientData.phoneNumber}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-md"
               required
@@ -102,7 +105,21 @@ const NewUser = () => {
               type="date"
               id="dateOfBirth"
               name="dateOfBirth"
-              value={userData.dateOfBirth}
+              value={patientData.dateOfBirth}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border rounded-md"
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="email">
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={patientData.email}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-md"
               required
@@ -115,7 +132,7 @@ const NewUser = () => {
             <select
               id="language"
               name="language"
-              value={userData.language}
+              value={patientData.language}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-md"
               required
@@ -132,7 +149,7 @@ const NewUser = () => {
             <select
               id="kupatCholim"
               name="kupatCholim"
-              value={userData.kupatCholim}
+              value={patientData.kupatCholim}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-md"
               required
@@ -144,12 +161,31 @@ const NewUser = () => {
               <option value="מכבי">מכבי</option>
             </select>
           </div>
+
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="gender">
+              Gender
+            </label>
+            <select
+              id="gender"
+              name="gender"
+              value={patientData.gender}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border rounded-md"
+              required
+            >
+              <option value="">Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+
           <div className="flex justify-between">
             <button
               type="submit"
               className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
             >
-              Create User
+              Create Patient
             </button>
             <Link
               to="/"
@@ -164,4 +200,4 @@ const NewUser = () => {
   );
 };
 
-export default NewUser;
+export default NewPatient;

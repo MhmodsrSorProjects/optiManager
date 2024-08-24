@@ -45,7 +45,4 @@ Frontend
 * nodemailer package: For sending emails.
 * Twilio: For sending SMS notifications to patients.
 
-![ezgif-3-e1959300b9](https://github.com/user-attachments/assets/60472b8f-348c-4a7a-9ab5-2e3ee7095f97)
 
-![ezgif-3-0f26bb2707](https://github.com/user-attachments/assets/a3bd695d-12c4-4814-b71c-58b18db00b2f)
-![alt text](<‏لقطة الشاشة 2024-08-11 في 7.01.59 م.png>) ![alt text](<‏لقطة الشاشة 2024-08-11 في 7.02.04 م.png>) ![alt text](<‏لقطة الشاشة 2024-08-11 في 7.02.11 م.png>) ![alt text](<‏لقطة الشاشة 2024-08-11 في 7.02.16 م.png>)
