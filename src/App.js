@@ -1,43 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Cookies from 'js-cookie';
+import { UserProvider } from './UserContext';
 import Home from './pages/Home';
-import NewExamination from './components/NewExamination';
-import Header from './components/Header';
 import Login from './pages/Login';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
-import './App.css';
+import Header from './components/Header';
+import NewExamination from './components/NewExamination';
+import NewPatient from './pages/NewPatient';
 
 const App = () => {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const token = Cookies.get('authToken');
-    if (token) {
-      if (token === 'superadmin-token') {
-        // Set the super admin user here based on your logic
-        const superAdmin = { username: 'superadmin', role: 'superadmin' }; // Complete the object
-        setUser(superAdmin);
-      } else if (token === 'clinicadmin-token') {
-        // Set the clinic admin user here based on your logic
-        const clinicAdmin = { username: 'clinicadmin', role: 'clinicadmin', clinic: { name: 'Clinic One' } }; // Complete the object
-        setUser(clinicAdmin);
-      }
-    }
-  }, []);
-
   return (
-    <div className="App">
+    <UserProvider>
       <Router>
-        {user && <Header user={user} setUser={setUser} />}
+        <Header />
         <Routes>
-          <Route path="/" element={<Login setUser={setUser} />} />
-          <Route path="/superadmin-dashboard/*" element={<SuperAdminDashboard user={user} setUser={setUser} />} />
+          <Route path="/" element={<Login />} />
           <Route path="/home" element={<Home />} />
+          <Route path="/superadmin-dashboard" element={<SuperAdminDashboard />} />
           <Route path="/new-examination/:id" element={<NewExamination />} />
+          <Route path="/new-patient" element={<NewPatient />} />
         </Routes>
       </Router>
-    </div>
+    </UserProvider>
   );
 };
 

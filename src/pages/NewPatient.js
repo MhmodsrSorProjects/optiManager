@@ -1,39 +1,82 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useUser } from '../UserContext'; // Import the useUser hook
 
 const NewPatient = () => {
+  const { user } = useUser(); // Get the logged-in user from the context
+  const navigate = useNavigate();
+
   const [patientData, setPatientData] = useState({
     patientName: '',
     doctorName: '',
-    patientID: '',
     phoneNumber: '',
     dateOfBirth: '',
     language: '',
     kupatCholim: '',
     gender: '',
-    email: '' 
+    email: '',
+    eyeExaminations: [], // Initialize eyeExaminations as an empty array
   });
 
+  // Function to handle form data changes
   const handleChange = (e) => {
     setPatientData({ ...patientData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // send this data to your backend server.
-    console.log('New Patient Data:', patientData);
+  // Function to generate random string
+  const randomString = (length) => {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return result;
+  };
+
+  // Function to fill form with random test data
+  const fillData = () => {
+    const randomName = `Patient ${randomString(5)}`;
+    const randomDoctor = `Dr. ${randomString(5)}`;
+    const randomEmail = `${randomString(7)}@example.com`;
+    const randomPhone = `123-456-${Math.floor(1000 + Math.random() * 9000)}`;
+    const randomDateOfBirth = `19${Math.floor(70 + Math.random() * 30)}-01-01`;
+    const randomLanguage = ['Hebrew', 'Arabic', 'English'][Math.floor(Math.random() * 3)];
+    const randomKupatCholim = ['ליאומית', 'כללית', 'מאוחדת', 'מכבי', 'Maccabi'][Math.floor(Math.random() * 5)];
+    const randomGender = ['Male', 'Female'][Math.floor(Math.random() * 2)];
+
     setPatientData({
-      patientName: '',
-      doctorName: '',
-      patientID: '',
-      phoneNumber: '',
-      dateOfBirth: '',
-      language: '',
-      kupatCholim: '',
-      gender: '',
-      email: '' 
+      patientName: randomName,
+      doctorName: randomDoctor,
+      phoneNumber: randomPhone,
+      dateOfBirth: randomDateOfBirth,
+      language: randomLanguage,
+      kupatCholim: randomKupatCholim,
+      gender: randomGender,
+      email: randomEmail,
+      eyeExaminations: [], // Ensure eyeExaminations starts as an empty array
     });
-    // Optionally, redirect to another page after submission
+  };
+
+  // Function to handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      // Get the clinic user's data to update the patients
+      const response = await axios.get(`http://localhost:3000/clinicUsers/${user.id}`);
+      const clinicUser = response.data;
+
+      // Add the new patient to the existing patients list
+      const updatedPatients = [...clinicUser.patients, { id: Date.now(), ...patientData }];
+
+      // Update the clinic user with the new patients list
+      await axios.put(`http://localhost:3000/clinicUsers/${user.id}`, { ...clinicUser, patients: updatedPatients });
+
+      // Redirect to the home page after successfully adding a patient
+      navigate('/home');
+    } catch (error) {
+      console.error('Error adding new patient:', error);
+    }
   };
 
   return (
@@ -64,20 +107,6 @@ const NewPatient = () => {
               id="doctorName"
               name="doctorName"
               value={patientData.doctorName}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md"
-              required
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="patientID">
-              Patient ID
-            </label>
-            <input
-              type="text"
-              id="patientID"
-              name="patientID"
-              value={patientData.patientID}
               onChange={handleChange}
               className="w-full px-3 py-2 border rounded-md"
               required
@@ -140,6 +169,7 @@ const NewPatient = () => {
               <option value="">Select Language</option>
               <option value="Hebrew">Hebrew</option>
               <option value="Arabic">Arabic</option>
+              <option value="English">English</option>
             </select>
           </div>
           <div className="mb-4">
@@ -159,9 +189,9 @@ const NewPatient = () => {
               <option value="כללית">כללית</option>
               <option value="מאוחדת">מאוחדת</option>
               <option value="מכבי">מכבי</option>
+              <option value="Maccabi">Maccabi</option>
             </select>
           </div>
-
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="gender">
               Gender
@@ -182,13 +212,20 @@ const NewPatient = () => {
 
           <div className="flex justify-between">
             <button
+              type="button"
+              onClick={fillData}
+              className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+            >
+              Fill Data
+            </button>
+            <button
               type="submit"
               className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
             >
               Create Patient
             </button>
             <Link
-              to="/"
+              to="/home"
               className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
             >
               Cancel

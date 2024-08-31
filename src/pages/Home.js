@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import PatientFilter from '../components/PatientFilter';
+import axios from 'axios';
+import { useUser } from '../UserContext'; // Import the useUser hook
 
 const Home = () => {
-    const location = useLocation();
-    const [user, setUser] = useState(null);
+    const { user } = useUser(); // Get user from the context
     const [patients, setPatients] = useState([]);
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -13,11 +14,18 @@ const Home = () => {
     const [selectedPatients, setSelectedPatients] = useState([]);
 
     useEffect(() => {
-        // Retrieve the user data from location state or other method
-        const loggedUser = location.state?.user || {}; // You can also retrieve user data from cookies or a global state
-        setUser(loggedUser);
-        setPatients(loggedUser.clinic?.patients || []);
-    }, [location.state]);
+        if (user) {
+            // Fetch patients for the logged-in clinic admin
+            axios.get(`http://localhost:3000/clinicUsers/${user.id}`)
+                .then((response) => {
+                    const clinicUser = response.data;
+                    setPatients(clinicUser.patients || []);
+                })
+                .catch((error) => {
+                    console.error('Error fetching patients:', error);
+                });
+        }
+    }, [user]);
 
     const handleOpenClick = (patient) => {
         setSelectedPatient(patient);
@@ -38,7 +46,6 @@ const Home = () => {
         const matchesSearchTerm =
             patient.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             patient.doctorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            patient.patientID.includes(searchTerm) ||
             patient.email.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesAgeFilter =
@@ -50,11 +57,11 @@ const Home = () => {
         return matchesSearchTerm && matchesAgeFilter && matchesGenderFilter;
     });
 
-    const handleSelectPatient = (patientID) => {
+    const handleSelectPatient = (id) => {
         setSelectedPatients((prevSelected) =>
-            prevSelected.includes(patientID)
-                ? prevSelected.filter((id) => id !== patientID)
-                : [...prevSelected, patientID]
+            prevSelected.includes(id)
+                ? prevSelected.filter((selectedId) => selectedId !== id)
+                : [...prevSelected, id]
         );
     };
 
@@ -62,17 +69,17 @@ const Home = () => {
         if (selectedPatients.length === filteredPatients.length) {
             setSelectedPatients([]);
         } else {
-            setSelectedPatients(filteredPatients.map((patient) => patient.patientID));
+            setSelectedPatients(filteredPatients.map((patient) => patient.id));
         }
     };
 
-    const isSelected = (patientID) => selectedPatients.includes(patientID);
+    const isSelected = (id) => selectedPatients.includes(id);
 
     return (
         <div>
             <div className="container mx-auto mt-8">
                 <h1 className="text-3xl font-bold mb-4">Patient Eye Examination Records</h1>
-                
+
                 <PatientFilter
                     searchTerm={searchTerm}
                     setSearchTerm={setSearchTerm}
@@ -96,7 +103,6 @@ const Home = () => {
                             </th>
                             <th className="py-3 px-6 text-left">Patient's Name</th>
                             <th className="py-3 px-6 text-left">Doctor's Name</th>
-                            <th className="py-3 px-6 text-left">Patient ID</th>
                             <th className="py-3 px-6 text-left">Phone Number</th>
                             <th className="py-3 px-6 text-left">Email</th>
                             <th className="py-3 px-6 text-left">Date of Birth</th>
@@ -106,18 +112,17 @@ const Home = () => {
                         </tr>
                     </thead>
                     <tbody className="text-gray-600 text-sm font-light">
-                        {filteredPatients.map((patient, index) => (
-                            <tr key={index} className="border-b border-gray-200 hover:bg-gray-100">
+                        {filteredPatients.map((patient) => (
+                            <tr key={patient.id} className="border-b border-gray-200 hover:bg-gray-100">
                                 <td className="py-3 px-6 text-center">
                                     <input
                                         type="checkbox"
-                                        checked={isSelected(patient.patientID)}
-                                        onChange={() => handleSelectPatient(patient.patientID)}
+                                        checked={isSelected(patient.id)}
+                                        onChange={() => handleSelectPatient(patient.id)}
                                     />
                                 </td>
                                 <td className="py-3 px-6 text-left whitespace-nowrap">{patient.patientName}</td>
                                 <td className="py-3 px-6 text-left">{patient.doctorName}</td>
-                                <td className="py-3 px-6 text-left">{patient.patientID}</td>
                                 <td className="py-3 px-6 text-left">{patient.phoneNumber}</td>
                                 <td className="py-3 px-6 text-left">{patient.email}</td>
                                 <td className="py-3 px-6 text-left">{patient.dateOfBirth}</td>
@@ -132,7 +137,7 @@ const Home = () => {
                                     </button>
 
                                     <Link
-                                        to={`/new-examination/${patient.patientID}`}
+                                        to={`/new-examination/${patient.id}`}
                                         state={{ patient }}
                                         className="bg-green-500 text-white px-4 py-2 rounded m-1"
                                     >

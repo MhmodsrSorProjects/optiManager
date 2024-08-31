@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import axios from 'axios';
+import { useUser } from '../UserContext'; // Import the user context
 
 const NewExamination = () => {
-    const location = useLocation();
+    const { id } = useParams(); // Get the patient ID from the URL
     const navigate = useNavigate();
-    const { patient } = location.state || {}; // Fallback to an empty object
-
+    const { user } = useUser(); // Get the logged-in user from the context
+    const [patient, setPatient] = useState(null); // State to store patient data
     const [formData, setFormData] = useState({
         dateOfEyeExamination: '',
         sphRightEye: '',
@@ -21,28 +23,91 @@ const NewExamination = () => {
         koter: '',
         segment: '',
         glassesType: ''
-    });
+    }); // State to handle form data
+    const [loading, setLoading] = useState(true); // State to handle loading
+    const [error, setError] = useState(''); // State to handle errors
+
+    // Function to fill form with random test data
+    const fillData = () => {
+        setFormData({
+            dateOfEyeExamination: '2024-01-15',
+            sphRightEye: `${(-2 + Math.random()).toFixed(2)}`,
+            sphLeftEye: `${(-1.5 + Math.random()).toFixed(2)}`,
+            cylRightEye: `${(-0.5 + Math.random()).toFixed(2)}`,
+            cylLeftEye: `${(-0.75 + Math.random()).toFixed(2)}`,
+            axRightEye: `${Math.floor(Math.random() * 180)}`,
+            axLeftEye: `${Math.floor(Math.random() * 180)}`,
+            pd: `${60 + Math.floor(Math.random() * 10)}`,
+            prRightEye: `${Math.random().toFixed(1)}`,
+            prLeftEye: `${Math.random().toFixed(1)}`,
+            add: `+${(1 + Math.random()).toFixed(1)}`,
+            koter: 'Normal',
+            segment: `${8 + Math.floor(Math.random() * 5)} mm`,
+            glassesType: 'מולטיפוקל'
+        });
+    };
+
+    useEffect(() => {
+        // Fetch the patient data based on user ID and patient ID
+        const fetchPatientData = async () => {
+            try {
+                const response = await axios.get(`http://localhost:3000/clinicUsers/${user.id}`);
+                const clinicUser = response.data;
+                const foundPatient = clinicUser.patients.find((p) => p.id.toString() === id);
+
+                if (foundPatient) {
+                    setPatient(foundPatient);
+                } else {
+                    setError('Patient not found.');
+                }
+            } catch (err) {
+                console.error('Error fetching patient data:', err);
+                setError('Error fetching patient data.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPatientData();
+    }, [id, user.id]);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Handle form submission (e.g., sending data to the backend)
-        console.log('New Examination Data:', formData);
-        navigate('/');
+        try {
+            // Add new examination to the patient's existing examinations
+            const updatedPatient = { ...patient, eyeExaminations: [...patient.eyeExaminations, formData] };
+
+            // Update the patient's data on the backend
+            const updatedPatients = user.patients.map((p) => p.id.toString() === id ? updatedPatient : p);
+            await axios.put(`http://localhost:3000/clinicUsers/${user.id}`, {
+                ...user,
+                patients: updatedPatients,
+            });
+
+            console.log('New Examination Data:', formData);
+            navigate('/home'); // Navigate to home after successful submission
+        } catch (err) {
+            console.error('Error saving new examination:', err);
+            setError('Error saving new examination. Please try again.');
+        }
     };
 
-    // If no patient data is found in the state, show a warning message
-    if (!patient || !patient.patientName) {
+    if (loading) {
+        return <div>Loading...</div>;
+    }
+
+    if (error) {
         return (
             <div className="container mx-auto mt-8">
-                <h1 className="text-3xl font-bold mb-4">Patient Not Found</h1>
-                <p>Please go back and select a patient.</p>
+                <h1 className="text-3xl font-bold mb-4">Error</h1>
+                <p>{error}</p>
                 <button
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/home')}
                     className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
                 >
                     Go Back
@@ -56,6 +121,15 @@ const NewExamination = () => {
             <h1 className="text-3xl font-bold mb-4">New Eye Examination for {patient.patientName}</h1>
             <form onSubmit={handleSubmit} className="bg-white p-6 shadow-md rounded">
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    {/* Button to fill data */}
+                    <button
+                        type="button"
+                        onClick={fillData}
+                        className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+                    >
+                        Fill Data
+                    </button>
+                    {/* Date of Examination */}
                     <div>
                         <label className="block mb-2 text-sm font-bold">Date of Examination</label>
                         <input
