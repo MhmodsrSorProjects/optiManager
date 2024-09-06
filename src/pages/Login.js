@@ -5,61 +5,32 @@ import axios from 'axios';
 import { useUser } from '../UserContext';
 
 const Login = () => {
+  const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { setUser } = useUser(); // Get setUser from the context
+  const { setUser } = useUser();
   const navigate = useNavigate();
 
   const handleLogin = async () => {
     try {
-      // Fetch superAdmins and clinicUsers data from json-server
-      const [superAdminsResponse, clinicUsersResponse] = await Promise.all([
-        axios.get('http://localhost:3000/superAdmins'),
-        axios.get('http://localhost:3000/clinicUsers')
-      ]);
+      const response = await axios.post(`${BASE_URL}/api/auth/login`, { username, password });
+      // Assuming the backend returns user data on successful login
+      const user = response.data.user;
 
-      const superAdmins = superAdminsResponse.data;
-      const clinicUsers = clinicUsersResponse.data;
-
-      // Find the super admin in the fetched data
-      const superAdmin = superAdmins.find(
-        (user) => user.username === username && user.password === password
-      );
-
-      if (superAdmin) {
-        const token = 'superadmin-token'; // Simulate token generation
-        Cookies.set('authToken', token, { expires: 1 }); // Save token in cookies
-        localStorage.setItem('user', JSON.stringify(superAdmin)); // Store user in localStorage
-        setUser(superAdmin); // Update user state
-        navigate('/superadmin-dashboard'); // Navigate to super admin dashboard
-        return;
-      }
-
-      // Find the clinic admin in the fetched data
-      const clinicAdmin = clinicUsers.find(
-        (user) => user.username === username && user.password === password
-      );
-
-      if (clinicAdmin) {
-        const token = 'clinicadmin-token'; // Simulate token generation
-        Cookies.set('authToken', token, { expires: 1 });
-        localStorage.setItem('user', JSON.stringify(clinicAdmin)); // Store user in localStorage
-        setUser(clinicAdmin); // Set the logged-in user state
-        navigate('/home'); // Navigate to home page
-        return;
-      }
-
-      setError('Invalid username or password'); // Show error if credentials are invalid
+      const token = `${user.role}-token`;
+      Cookies.set('authToken', token, { expires: 1 });
+      localStorage.setItem('user', JSON.stringify(user));
+      setUser(user);
+      navigate(user.role === 'superadmin' ? '/superadmin-dashboard' : '/home');
     } catch (err) {
-      setError('An error occurred while logging in. Please try again.'); // Error handling for network issues
-      console.error('Login error:', err); // Log the error to console for debugging
+      setError('Invalid username or password');
+      console.error('Login error:', err);
     }
   };
 
   return (
-    <div
-      className="flex justify-center items-center min-h-screen bg-cover bg-center"
+    <div className="flex justify-center items-center min-h-screen bg-cover bg-center"
       style={{
         backgroundImage: "url('https://i.pinimg.com/originals/3c/16/6d/3c166df34a65611cbfbd28bff3644043.gif')"
       }}

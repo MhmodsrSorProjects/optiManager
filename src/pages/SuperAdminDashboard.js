@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import HeaderSuperAdmin from '../components/HeaderSuperAdmin';
 
 const SuperAdminDashboard = ({ user, setUser }) => {
+  const BASE_URL = process.env.REACT_APP_API_BASE_URL;
   const [view, setView] = useState('admins'); // Controls current view between 'admins' and 'clinics'
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,11 +14,10 @@ const SuperAdminDashboard = ({ user, setUser }) => {
     fetchAdmins();
   }, []);
 
-  // Fetch data from JSON server
   const fetchAdmins = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:3000/clinicUsers');
+      const response = await axios.get(`${BASE_URL}/api/users`);
       const clinicAdmins = response.data.filter(user => user.role === 'clinicadmin');
       setAdmins(clinicAdmins);
     } catch (error) {
@@ -31,7 +30,7 @@ const SuperAdminDashboard = ({ user, setUser }) => {
   // Handle adding a new admin
   const handleAddAdmin = () => {
     setShowForm(true);
-    setFormData({ username: '', password: '', name: '', id: '' });
+    setFormData({ username: '', password: '', name: '' });
   };
 
   // Handle editing an admin
@@ -43,8 +42,8 @@ const SuperAdminDashboard = ({ user, setUser }) => {
   // Handle deleting an admin
   const handleDeleteAdmin = async (id) => {
     try {
-      await axios.delete(`http://localhost:3000/clinicUsers/${id}`);
-      setAdmins(admins.filter(admin => admin.id !== id));
+      await axios.delete(`${BASE_URL}/api/users/${id}`); // Updated to backend route
+      setAdmins(admins.filter(admin => admin._id !== id)); // Use _id if using MongoDB ObjectId
     } catch (error) {
       setError('Failed to delete admin. Please try again.');
     }
@@ -54,15 +53,14 @@ const SuperAdminDashboard = ({ user, setUser }) => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (formData.id) {
+      if (formData._id) {
         // Update existing admin
-        await axios.put(`http://localhost:3000/clinicUsers/${formData.id}`, formData);
-        setAdmins(admins.map(admin => (admin.id === formData.id ? formData : admin)));
+        await axios.put(`${BASE_URL}/api/users/${formData._id}`, formData); // Use _id for MongoDB
+        setAdmins(admins.map(admin => (admin._id === formData._id ? formData : admin)));
       } else {
         // Add new admin
-        const response = await axios.post('http://localhost:3000/clinicUsers', {
+        const response = await axios.post(`${BASE_URL}/api/users`, {
           ...formData,
-          id: Date.now().toString(),
           role: 'clinicadmin',
         });
         setAdmins([...admins, response.data]);
@@ -99,7 +97,7 @@ const SuperAdminDashboard = ({ user, setUser }) => {
             </thead>
             <tbody className="text-gray-600 text-sm font-light">
               {admins.map((admin) => (
-                <tr key={admin.id} className="border-b border-gray-200 hover:bg-gray-100">
+                <tr key={admin._id} className="border-b border-gray-200 hover:bg-gray-100"> {/* Use _id for MongoDB */}
                   <td className="py-3 px-6 text-left">{admin.username}</td>
                   <td className="py-3 px-6 text-left">{admin.name}</td>
                   <td className="py-3 px-6 text-center">
@@ -111,7 +109,7 @@ const SuperAdminDashboard = ({ user, setUser }) => {
                     </button>
                     <button
                       className="bg-red-500 text-white px-4 py-2 rounded m-1"
-                      onClick={() => handleDeleteAdmin(admin.id)}
+                      onClick={() => handleDeleteAdmin(admin._id)} // Use _id for MongoDB
                     >
                       Delete
                     </button>
@@ -125,7 +123,7 @@ const SuperAdminDashboard = ({ user, setUser }) => {
 
       {showForm && (
         <form onSubmit={handleFormSubmit} className="mt-8 bg-gray-100 p-4 rounded shadow-md">
-          <h3 className="text-xl font-bold mb-4">{formData.id ? 'Edit Admin' : 'Add Admin'}</h3>
+          <h3 className="text-xl font-bold mb-4">{formData._id ? 'Edit Admin' : 'Add Admin'}</h3> {/* Use _id for MongoDB */}
           <label className="block mb-2">Admin Username</label>
           <input
             type="text"
@@ -151,8 +149,8 @@ const SuperAdminDashboard = ({ user, setUser }) => {
             required
           />
           <button type="submit" className="mt-4 bg-blue-500 text-white px-4 py-2 rounded">
-            {formData.id ? 'Update Admin' : 'Add Admin'}
-          </button>
+            {formData._id ? 'Update Admin' : 'Add Admin'}
+          </button> {/* Use _id for MongoDB */}
           <button
             type="button"
             className="mt-4 bg-gray-500 text-white px-4 py-2 rounded ml-4"

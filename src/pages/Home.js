@@ -5,6 +5,7 @@ import axios from 'axios';
 import { useUser } from '../UserContext'; // Import the useUser hook
 
 const Home = () => {
+    const BASE_URL = process.env.REACT_APP_API_BASE_URL;
     const { user } = useUser(); // Get user from the context
     const [patients, setPatients] = useState([]);
     const [selectedPatient, setSelectedPatient] = useState(null);
@@ -12,14 +13,14 @@ const Home = () => {
     const [ageFilter, setAgeFilter] = useState('');
     const [genderFilter, setGenderFilter] = useState('');
     const [selectedPatients, setSelectedPatients] = useState([]);
+    // console.log("Selected Patients:", selectedPatients);
 
     useEffect(() => {
         if (user) {
-            // Fetch patients for the logged-in clinic admin
-            axios.get(`http://localhost:3000/clinicUsers/${user.id}`)
+            axios.get(`${BASE_URL}/api/users/${user._id}/patients`)
                 .then((response) => {
                     const clinicUser = response.data;
-                    setPatients(clinicUser.patients || []);
+                    setPatients(clinicUser || []);
                 })
                 .catch((error) => {
                     console.error('Error fetching patients:', error);
@@ -42,6 +43,7 @@ const Home = () => {
         return Math.abs(ageDt.getUTCFullYear() - 1970);
     };
 
+
     const filteredPatients = patients.filter((patient) => {
         const matchesSearchTerm =
             patient.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -57,23 +59,30 @@ const Home = () => {
         return matchesSearchTerm && matchesAgeFilter && matchesGenderFilter;
     });
 
-    const handleSelectPatient = (id) => {
-        setSelectedPatients((prevSelected) =>
-            prevSelected.includes(id)
-                ? prevSelected.filter((selectedId) => selectedId !== id)
-                : [...prevSelected, id]
-        );
+    const handleSelectPatient = (patientId) => {
+        setSelectedPatients(prevSelected => {
+            const index = prevSelected.indexOf(patientId);
+            if (index > -1) {
+                // If found, remove it (deselect)
+                return prevSelected.filter(id => id !== patientId);
+            } else {
+                // Otherwise, add it (select)
+                return [...prevSelected, patientId];
+            }
+        });
     };
 
     const handleSelectAll = () => {
         if (selectedPatients.length === filteredPatients.length) {
+            // If all are selected, deselect all
             setSelectedPatients([]);
         } else {
-            setSelectedPatients(filteredPatients.map((patient) => patient.id));
+            // Otherwise, select all visible (filtered) patients
+            setSelectedPatients(filteredPatients.map(patient => patient._id));
         }
     };
 
-    const isSelected = (id) => selectedPatients.includes(id);
+    const isSelected = (patientId) => selectedPatients.includes(patientId);
 
     return (
         <div>
@@ -97,9 +106,10 @@ const Home = () => {
                             <th className="py-3 px-6 text-center">
                                 <input
                                     type="checkbox"
-                                    checked={selectedPatients.length === filteredPatients.length}
+                                    checked={selectedPatients.length === filteredPatients.length && selectedPatients.length !== 0}
                                     onChange={handleSelectAll}
                                 />
+
                             </th>
                             <th className="py-3 px-6 text-left">Patient's Name</th>
                             <th className="py-3 px-6 text-left">Doctor's Name</th>
@@ -117,8 +127,8 @@ const Home = () => {
                                 <td className="py-3 px-6 text-center">
                                     <input
                                         type="checkbox"
-                                        checked={isSelected(patient.id)}
-                                        onChange={() => handleSelectPatient(patient.id)}
+                                        checked={isSelected(patient._id)}
+                                        onChange={() => handleSelectPatient(patient._id)}
                                     />
                                 </td>
                                 <td className="py-3 px-6 text-left whitespace-nowrap">{patient.patientName}</td>
@@ -137,12 +147,13 @@ const Home = () => {
                                     </button>
 
                                     <Link
-                                        to={`/new-examination/${patient.id}`}
+                                        to={`/new-examination/${patient._id}`}
                                         state={{ patient }}
                                         className="bg-green-500 text-white px-4 py-2 rounded m-1"
                                     >
                                         New Eye Examination
                                     </Link>
+
                                 </td>
                             </tr>
                         ))}

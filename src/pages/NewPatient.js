@@ -4,8 +4,9 @@ import axios from 'axios';
 import { useUser } from '../UserContext'; // Import the useUser hook
 
 const NewPatient = () => {
-  const { user } = useUser(); // Get the logged-in user from the context
+  const { user } = useUser();
   const navigate = useNavigate();
+  const BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
   const [patientData, setPatientData] = useState({
     patientName: '',
@@ -16,13 +17,7 @@ const NewPatient = () => {
     kupatCholim: '',
     gender: '',
     email: '',
-    eyeExaminations: [], // Initialize eyeExaminations as an empty array
   });
-
-  // Function to handle form data changes
-  const handleChange = (e) => {
-    setPatientData({ ...patientData, [e.target.name]: e.target.value });
-  };
 
   // Function to generate random string
   const randomString = (length) => {
@@ -38,7 +33,7 @@ const NewPatient = () => {
   const fillData = () => {
     const randomName = `Patient ${randomString(5)}`;
     const randomDoctor = `Dr. ${randomString(5)}`;
-    const randomEmail = `${randomString(7)}@example.com`;
+    const randomEmail = `${randomString(7)}@gmail.com`;
     const randomPhone = `123-456-${Math.floor(1000 + Math.random() * 9000)}`;
     const randomDateOfBirth = `19${Math.floor(70 + Math.random() * 30)}-01-01`;
     const randomLanguage = ['Hebrew', 'Arabic', 'English'][Math.floor(Math.random() * 3)];
@@ -59,25 +54,31 @@ const NewPatient = () => {
   };
 
   // Function to handle form submission
+  const handleChange = (e) => {
+    setPatientData(prevState => ({
+      ...prevState,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Get the clinic user's data to update the patients
-      const response = await axios.get(`http://localhost:3000/clinicUsers/${user.id}`);
-      const clinicUser = response.data;
+      // API call to create a new patient
+      const response = await axios.post(`${BASE_URL}/api/patients`, {
+        ...patientData,
+        userId: user._id  // Send the user ID if required by the backend
+      });
 
-      // Add the new patient to the existing patients list
-      const updatedPatients = [...clinicUser.patients, { id: Date.now(), ...patientData }];
-
-      // Update the clinic user with the new patients list
-      await axios.put(`http://localhost:3000/clinicUsers/${user.id}`, { ...clinicUser, patients: updatedPatients });
-
-      // Redirect to the home page after successfully adding a patient
-      navigate('/home');
+      if (response.status === 201) {
+        navigate('/home');
+      }
     } catch (error) {
       console.error('Error adding new patient:', error);
     }
   };
+
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
@@ -162,7 +163,7 @@ const NewPatient = () => {
               id="language"
               name="language"
               value={patientData.language}
-              onChange={handleChange}
+              onChange={handleChange}  // make sure handleChange properly updates only the relevant part of the state
               className="w-full px-3 py-2 border rounded-md"
               required
             >
@@ -171,6 +172,7 @@ const NewPatient = () => {
               <option value="Arabic">Arabic</option>
               <option value="English">English</option>
             </select>
+
           </div>
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="kupatCholim">
